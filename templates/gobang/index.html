@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title></title>
+    <style type="text/css">
+        body {
+            margin: 10px;
+        }
+    </style>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
+    {% load socketio_tags %}
+    {% socketio %}
+    <script>
+        var socket;
+        var connected = function(data){
+            //send self id
+            socket.subscribe('gobang-' + {{  person.pk}});
+        };
+        var disconnected = function() {
+            //set reconnect
+            setTimeout(start, 1000);
+        };
+        var messaged = function(data){
+            switch (data.action){
+                //come new challenge
+                case 'come':{
+                    var con = confirm("accept:" + data.msg + " ?");
+                    if (con == true) {
+                        //accept data.uid's challenge
+                        socket.send({action: 'accept', 'msg': data.uid});
+                    }
+                    else {
+                        socket.send({action: 'refuse'});
+                    }
+                    break;
+                }
+                //ready to play
+                case 'ready':{
+                    alert('init chess, ready to play');
+                    init_chess();
+                    if(data.fid == {{ person.pk }}) {
+                        turn = true;
+                        color = 1;
+                        alert('go first');
+                    }
+                    document.getElementById('status').innerText = 'playing';
+                }
+                //other has go
+                case 'go':{
+                    //draw other's go
+                    drawChess(data.color, data.x, data.y);
+                    //my turn please
+                    turn = true;
+                }
+            }
+        };
+        var start = function(){
+            socket = new io.Socket();
+            socket.connect();
+            socket.on('connect', connected);
+            socket.on('disconnect', disconnected);
+            socket.on('message', messaged);
+        };
+        start();
+        var playwith = function(person){
+            socket.send({action:'play', msg:person})
+        };
+
+    </script>
+    <script type="text/javascript">
+        var canvas;
+        var context;
+        //indicate white or black 1 is white and 0 is black
+        var color = 0;
+        //indicate if it is your turn
+        var turn = true;
+        var chess_w_h = 640;
+        var step = 40;
+        var chess_num = 15;
+        var img_b = new Image();
+        img_b.src = "static/images/white.png";//白棋图片
+        var img_w = new Image();
+        img_w.src = "static/images/black.png";//黑棋图片
+ 
+        var chessData = new Array(15);//这个为棋盘的二维数组用来保存棋盘信息，初始化0为没有走过的，1为白棋走的，2为黑棋走的
+        for (var x = 0; x < 15; x++) {
+            chessData[x] = new Array(15);
+        }
+
+        var canvas;
+        var context;
+
+        //draw line
+        function drawRect() {//页面加载完毕调用函数，初始化棋盘
+            for (var i = 0; i <= chess_w_h; i += step) {//绘制棋盘的线
+                context.beginPath();
+                context.moveTo(0, i);
+                context.lineTo(chess_w_h, i);
+                context.closePath();
+                context.stroke();
+                context.beginPath();
+                context.moveTo(i, 0);
+                context.lineTo(i, chess_w_h);
+                context.closePath();
+                context.stroke();
+            }
+        }
+
+        //init chess
+        function init_chess(){
+            //init zero for chessdata
+            for (var x = 0; x < chess_num; x++) {
+                for (var y = 0; y < chess_num; y++) {
+                    chessData[x][y] = 0;
+                }
+            }
+            canvas = document.getElementById("canvas");
+            context = canvas.getContext("2d");
+            //clear
+            context.clearRect(0,0, chess_w_h, chess_w_h);
+            //draw line
+            drawRect();
+        }
+
+        function play(e) {//鼠标点击时发生
+            var x = parseInt((e.clientX - (step / 2)) / step);//计算鼠标点击的区域，如果点击了（65，65），那么就是点击了（1，1）的位置
+            var y = parseInt((e.clientY - (step / 2)) / step);
+            if(!turn){
+                alert("it is not your turn now");
+                return;
+            }
+            if (chessData[x][y] != 0) {//判断该位置是否被下过了
+                alert("can not play in this position");
+                return;
+            }
+            socket.send({action:'go',color:color,x:x,y:y});
+            drawChess(color,x,y);
+            //not your turn
+            turn = false;
+        }
+        function drawChess(color, x, y) {//参数为，棋（1为白棋，2为黑棋），数组位置
+            if (x >= 0 && x < chess_num && y >= 0 && y < chess_num) {
+                if (color == 0) {
+                    context.drawImage(img_w, x * step + step / 2, y * step + step / 2);//绘制白棋
+                    chessData[x][y] = 1;
+                }
+                else{
+                    context.drawImage(img_b, x * step + step / 2, y * step + step / 2);//绘制白棋
+                    chessData[x][y] = 2;
+                }
+            }
+        }
+        function judge(color, x, y) {
+         //判断该局棋盘是否赢了
+            var count1 = 0;
+            var count2 = 0;
+            var count3 = 0;
+            var count4 = 0;
+            //左右判断
+            for (var i = x; i >= 0; i--) {
+                if (chessData[i][y] != color + 1) {
+                    break;
+                }
+                count1++;
+            }
+            for (var i = x + 1; i < chess_num; i++) {
+                if (chessData[i][y] != color + 1) {
+                    break;
+                }
+                count1++;
+            }
+            //上下判断
+            for (var i = y; i >= 0; i--) {
+                if (chessData[x][i] != color + 1) {
+                    break;
+                }
+                count2++;
+            }
+            for (var i = y + 1; i < chess_num; i++) {
+                if (chessData[x][i] != color + 1) {
+                    break;
+                }
+                count2++;
+            }
+            //左上右下判断
+            for (var i = x, j = y; i >= 0, j >= 0; i--, j--) {
+                if (chessData[i][j] != color + 1) {
+                    break;
+                }
+                count3++;
+            }
+            for (var i = x + 1, j = y + 1; i < chess_num, j < chess_num; i++, j++) {
+                if (chessData[i][j] != color + 1) {
+                    break;
+                }
+                count3++;
+            }
+            //右上左下判断
+            for (var i = x, j = y; i >= 0, j < chess_num; i--, j++) {
+                if (chessData[i][j] != color + 1) {
+                    break;
+                }
+                count4++;
+            }
+            for (var i = x + 1, j = y - 1; i < chess_num, j >= 0; i++, j--) {
+                if (chessData[i][j] != color + 1) {
+                    break;
+                }
+                count4++;
+            }
+ 
+            if (count1 >= 5 || count2 >= 5 || count3 >= 5 || count4 >= 5) {
+                return true;
+            }
+            return false;
+        }
+    </script>
+</head>
+<body onload="init_chess()">
+    <div>
+        <canvas width="640" id="canvas" onmousedown="play(event)" height="640">你的浏览器不支持HTML5 canvas  ，请使用 google chrome 浏览器 打开.
+        </canvas>
+    </div>
+    <div>
+        <table>
+            username: <label id="username">{{ person.username }}</label>
+            status:<label id="status"> free </label>
+            {% for pk,username in people %}
+                <tr>
+                    <td>{{ username }}</td>
+                    <td> <button onclick="playwith('{{ pk }}')" value="play">play with he/she</button></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

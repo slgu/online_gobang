@@ -1,0 +1,54 @@
+<h1 xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">Register Page</h1>
+<script>
+    var xmlhttp;
+    var email;
+    function send_email() {
+        //get email to send
+        email = document.getElementById("email");
+        if(email == undefined){
+            email = "";
+        }
+        else{
+            email = email.value;
+        }
+        if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp = new XMLHttpRequest();
+        }
+        else {
+            // code for IE6, IE5
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp.open('POST', '/gobang/send_code',true);
+        xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        xmlhttp.onreadystatechange=function() {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                var send_button = document.getElementById("send_code");
+                send_button.innerText = "send successful";
+                send_button.disabled = "disabled";
+            }
+        }
+        xmlhttp.send("email=" + email);
+    }
+</script>
+<h2>
+    {% if error_msg %}
+        <li>error_msg: {{error_msg}}</li>
+    {% endif %}
+</h2>
+<form method="post" action="/gobang/register">
+    {% csrf_token %}
+    <label>username:</label>
+    <input id="username" name="username" type="text"></input> <br/>
+    <label>password:</label>
+    <input id="passwd" name="passwd" type="password"></input><br/>
+    <label>password again:</label>
+    <input id="passwd_cp" name="passwd_cp" type="password"></input> <br />
+    <label>email:</label>
+    <input id="email" name="email" type="tel"></input> <br />
+    <label>validation code:</label>
+    <input id="validation_code" name="validation_code"></input>
+    <br />
+    <input type="submit" value="register"/>
+</form>
+<button onclick="send_email()" id="send_code" name="send_code">send code</button>
+

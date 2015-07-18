@@ -1,0 +1,10 @@
+<h1 xmlns="http://www.w3.org/1999/html">Login Page</h1>
+
+<form method="post" action="/gobang/login">
+    {% csrf_token %}
+    <label>username:</label>
+    <input id="username" name="username" type="text"></input> <br/>
+    <label>password:</label>
+    <input id="passwd" name="passwd" type="text"></input><br/>
+    <input type="submit" value="login"/>
+</form>

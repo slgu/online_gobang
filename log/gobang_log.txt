@@ -1,0 +1,7 @@
+DEBUG 2015-07-15 12:15:13,663 370070
+DEBUG 2015-07-15 12:15:13,672 fuck random
+ERROR 2015-07-15 12:50:01,204 insert db error, UNIQUE constraint failed: gobang_person.username
+ERROR 2015-07-15 12:50:45,311 insert db error, UNIQUE constraint failed: gobang_person.username
+ERROR 2015-07-16 11:28:31,280 insert db error, (1062, "Duplicate entry 'nash142857' for key 'gobang_person_username_5cdc64402017a3e2_uniq'")
+ERROR 2015-07-16 11:29:29,495 insert db error, (1062, "Duplicate entry 'nash142857' for key 'gobang_person_username_5cdc64402017a3e2_uniq'")
+ERROR 2015-07-18 05:21:40,808 insert db error, (1062, "Duplicate entry 'nash142857' for key 'gobang_person_username_5cdc64402017a3e2_uniq'")
