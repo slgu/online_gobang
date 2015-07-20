@@ -1,5 +1,8 @@
 from django_socketio import events
+from models import Game
+from models import Person
 from django.core.cache import cache
+from django.utils import timezone
 import settings
 @events.on_message(channel="^gobang-")
 def deal_on_msg(request, socket, context, message):
@@ -23,7 +26,25 @@ def deal_on_msg(request, socket, context, message):
     elif action == 'go':
         #just re-send message
         other_pk = settings.play_info_cache.get(str(request.session['pk']))
-        socket.broadcast_channel(dict(message), channel = 'gobang-' + other_pk);
+        if other_pk is None:
+            return
+        if message['win_status'] == 1:
+            #has won
+            socket.send({'action':'done','win_status':1})
+            socket.broadcast_channel({'action':'done',
+                    'x':message['x'],
+                    'y':message['y'],
+                    'color':message['color'],
+                    'win_status':0}, channel = 'gobang-' + other_pk);
+            #clear cache
+            fid = str(request.session['pk'])
+            sid = other_pk
+            settings.play_info_cache.delete(sid)
+            settings.play_info_cache.delete(fid)
+            #record in database
+            Game(win_person = Person.objects.get(pk=fid), lose_person = Person.objects.get(pk=sid), game_time=timezone.now()).save()
+        else:
+            socket.broadcast_channel(dict(message), channel = 'gobang-' + other_pk);
     elif action == 'refuse':
         return
 

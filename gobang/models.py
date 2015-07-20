@@ -42,3 +42,11 @@ class Person(models.Model):
     #for debug
     def __unicode__(self):
         return "username:%s email:%s encrypt_passwd:%s" % (self.username, self.email, self.passwd)
+
+
+
+#record game
+class Game(models.Model):
+    win_person = models.ForeignKey(Person,related_name='win_person')
+    lose_person = models.ForeignKey(Person,related_name='lose_person')
+    game_time = models.DateTimeField()

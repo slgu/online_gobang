@@ -46,6 +46,7 @@
                         alert('go first');
                     }
                     document.getElementById('status').innerText = 'playing';
+                    break;
                 }
                 //other has go
                 case 'go':{
@@ -53,6 +54,22 @@
                     drawChess(data.color, data.x, data.y);
                     //my turn please
                     turn = true;
+                    break;
+                }
+                //game done
+                case 'done':{
+                    if(data.win_status == 1){
+                        alert('you win');
+                    }
+                    else{
+                        //draw last lose go
+                        drawChess(data.color, data.x, data.y);
+                        alert('you lose');
+                    }
+                    //game done
+                    turn = false;
+                    document.getElementById('status').innerText = 'free';
+                    break;
                 }
             }
         };
@@ -72,7 +89,7 @@
     <script type="text/javascript">
         var canvas;
         var context;
-        //indicate white or black 1 is white and 0 is black
+        //indicate white or black, 1 is white and 0 is black
         var color = 0;
         //indicate if it is your turn
         var turn = true;
@@ -135,8 +152,13 @@
                 alert("can not play in this position");
                 return;
             }
-            socket.send({action:'go',color:color,x:x,y:y});
             drawChess(color,x,y);
+            if(judge(color,x,y)){
+                socket.send({action:'go',color:color,x:x,y:y,win_status:true});//status == true means win
+            }
+            else{
+                socket.send({action:'go',color:color,x:x,y:y,win_status:false});
+            }
             //not your turn
             turn = false;
         }
