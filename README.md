@@ -1,3 +1,1 @@
-this is an online gobang game demo
-
-just to learn some practice of memcached, django, django socketio
+this is an online gobang game demo using django, websoecket and memcached
